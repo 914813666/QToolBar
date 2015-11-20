@@ -7,6 +7,7 @@
 //
 
 import UIKit
+//swift 2.0 
 
 let QImageRidio: CGFloat = 0.7
 
@@ -57,15 +58,16 @@ class QTabBarController: UITabBarController {
         
         let home2 = UIViewController()
         home2.view.backgroundColor = UIColor ( red: 0.5647, green: 0.4534, blue: 0.3571, alpha: 1.0 )
-        self.setUpOneChildViewController(home2, image: UIImage(named: "tabbar_home")!, selectedImage: UIImage(named: "tabbar_home_selected")!, title: "首页", hadNavgation: true)
+        self.setUpOneChildViewController(home2, image: UIImage(named: "tabbar_message_center")!, selectedImage: UIImage(named: "tabbar_message_center_selected")!, title: "邮件", hadNavgation: true)
         
         let home3 = UIViewController()
         home3.view.backgroundColor = UIColor ( red: 0.1435, green: 0.2514, blue: 0.1502, alpha: 1.0 )
-        self.setUpOneChildViewController(home3, image: UIImage(named: "tabbar_home")!, selectedImage: UIImage(named: "tabbar_home_selected")!, title: "首页", hadNavgation: true)
+        self.setUpOneChildViewController(home3, image: UIImage(named: "tabbar_discover")!, selectedImage: UIImage(named: "tabbar_discover_selected")!, title: "通知页面", hadNavgation: true)
+        home3.tabBarItem.badgeValue = "3"
         
         let home4 = UIViewController()
         home4.view.backgroundColor = UIColor ( red: 0.1912, green: 0.6379, blue: 0.2615, alpha: 1.0 )
-        self.setUpOneChildViewController(home4, image: UIImage(named: "tabbar_home")!, selectedImage: UIImage(named: "tabbar_home_selected")!, title: "首页", hadNavgation: true)
+        self.setUpOneChildViewController(home4, image: UIImage(named: "tabbar_profile")!, selectedImage: UIImage(named: "tabbar_profile_selected")!, title: "我", hadNavgation: true)
         
         
     
@@ -97,23 +99,7 @@ class QTabBar: UIView {
     var qCenterButtonClick: (()->())?
     
     private var buttons: [QTabBarButton]? = []
-    private var selectedButton: UIButton!
-//    private var plusButton: UIButton! = UIButton() {
-//        didSet {
-//            let btn = UIButton(type: .Custom)
-//            btn.setImage(UIImage(named: "tabbar_mainbtn"), forState: .Normal)
-//            btn.setImage(UIImage(named: "fabu_pressed"), forState: .Highlighted)
-//            btn.setBackgroundImage(UIImage(named: "tabbar_mainbtn"), forState: .Normal)
-//            btn.setBackgroundImage(UIImage(named: "tabbar_mainbtn"), forState: .Highlighted)
-//            btn.sizeToFit()
-//            
-//            btn.addTarget(self, action: "qTabBarCenterButtonClick:", forControlEvents: .TouchUpInside)
-//            
-//            plusButton = btn
-//            self.addSubview(plusButton)
-//        }
-//    }
-//    
+    private var selectedButton: UIButton! = UIButton()
     private var plusButton: UIButton!
     
     var tabBarItems: [UITabBarItem]! {
@@ -143,7 +129,7 @@ class QTabBar: UIView {
         btn.sizeToFit()
         
         btn.addTarget(self, action: "qTabBarCenterButtonClick:", forControlEvents: .TouchUpInside)
-            plusButton = btn
+        plusButton = btn
         self.addSubview(plusButton)
    
 
@@ -157,10 +143,11 @@ class QTabBar: UIView {
     
     func qTabBarButtonClick(btn: UIButton) {
        print("点击按钮");
-            selectedButton = btn
+        
         selectedButton.selected = false
         btn.selected = true
-   
+        selectedButton = btn
+        
         if qTabBarClick != nil{
             qTabBarClick!(index: btn.tag)
         }
@@ -205,6 +192,7 @@ class QTabBar: UIView {
 
 
 class  QTabBarButton: UIButton {
+    private var badgeView: QBadgeView! = QBadgeView()
     var item: UITabBarItem! {
         didSet {
             self.observeValueForKeyPath(nil , ofObject: nil, change: nil, context: nil)
@@ -226,6 +214,15 @@ class  QTabBarButton: UIButton {
         self.titleLabel?.textAlignment = .Center
         self.titleLabel?.font = UIFont.systemFontOfSize(12)
         
+        badgeView = {
+            let btn = QBadgeView(type: .Custom)
+            self.addSubview(btn)
+            return btn
+            }()
+        
+     
+        
+        
     }
 
     required init?(coder aDecoder: NSCoder) {
@@ -235,7 +232,9 @@ class  QTabBarButton: UIButton {
     override func observeValueForKeyPath(keyPath: String?, ofObject object: AnyObject?, change: [String : AnyObject]?, context: UnsafeMutablePointer<Void>) {
         self.setTitle(item.title, forState: .Normal)
         self.setImage(item.image, forState: .Normal)
-        self.setImage(item.selectedImage, forState: .Normal)
+        self.setImage(item.selectedImage, forState: .Selected)
+        
+        self.badgeView.badgeValue = item.badgeValue
       }
     // 修改按钮内部子控件的frame
     override func layoutSubviews() {
@@ -257,9 +256,59 @@ class  QTabBarButton: UIButton {
         self.titleLabel?.frame = CGRectMake(titleX, titleY, titleW, titleH)
         
         
+        var badgeFrame:CGRect = self.badgeView.frame
+        badgeFrame.origin.x = CGRectGetWidth(self.bounds) - CGRectGetWidth(badgeView.bounds) - 10
+        badgeFrame.origin.y = 0
+        self.badgeView.frame = badgeFrame
+        
+    }
+}
+class QBadgeView: UIButton {
+    var badgeValue: NSString? {
+        didSet{
+          
+            print(badgeValue)
+            if( (badgeValue?.length == 0) ||  (badgeValue?.integerValue == 0) || (badgeValue == nil)) {
+                self.hidden = true
+            } else {
+                self.hidden = false
+            }
+
+            
+            let font = [NSFontAttributeName: UIFont.systemFontOfSize(11)];
+            
+            let size = badgeValue?.sizeWithAttributes(font)
+            if size?.width > CGRectGetWidth(self.bounds) {
+                self.setImage( UIImage(named: "new_dot"), forState: .Normal)
+                self.setTitle(nil, forState: .Normal)
+                self.setBackgroundImage(nil , forState: .Normal)
+            } else {
+                self.setImage(nil , forState: .Normal)
+                self.setTitle(badgeValue as? String, forState: .Normal)
+                self.setBackgroundImage(UIImage(named: "main_badge") , forState: .Normal)
+            }
+            
+        }
+    }
+    
+    override init(frame: CGRect) {
+        super.init(frame: frame)
+        self.userInteractionEnabled = false
+        self.setBackgroundImage(UIImage(named: "main_badge"), forState: .Normal)
+        self.titleLabel?.font = UIFont.systemFontOfSize(11)
+        self.sizeToFit()
+        
         
     }
     
     
     
+
+    required init?(coder aDecoder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+    
+    
+    
 }
+
